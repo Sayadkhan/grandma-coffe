@@ -4,256 +4,226 @@ import React, { useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Lock } from "lucide-react";
-import { useSelector } from "react-redux";
+import { useSelector, useDispatch } from "react-redux";
+import { clearCart } from "@/redux/slice/cartSlice";
+import { toast } from "react-toastify";
+import { loadStripe } from "@stripe/stripe-js";
 
 const CheckoutPage = () => {
-  const [deliveryType, setDeliveryType] = useState("delivery");
-  const [discount, setDiscount] = useState("");
-  const [selectedAddressId, setSelectedAddressId] = useState(null);
-  const [modalOpen, setModalOpen] = useState(false); // <-- modal state
-  const [paymentMethod, setPaymentMethod] = useState(""); // <-- selected payment
-
-  const user = useSelector((state) => state.customer.customer);
   const { items, totalQuantity, totalPrice } = useSelector(
     (state) => state.cart
   );
+  const user = useSelector((state) => state.customer.customer);
+  const dispatch = useDispatch();
 
-  const shippingFee = 5;
-  const discountAmount = discount === "SAVE10" ? 10 : 0;
-  const finalTotal = totalPrice + shippingFee - discountAmount;
+  const [deliveryType, setDeliveryType] = useState("delivery");
+  const [paymentMethod, setPaymentMethod] = useState("cod");
+  const [loading, setLoading] = useState(false);
+  const [address, setAddress] = useState(null);
 
-  // Default select the first address
-  React.useEffect(() => {
-    if (user?.addresses?.length > 0) {
-      const primary = user.addresses.find((addr) => addr.isDefault);
-      setSelectedAddressId(primary?._id || user.addresses[0]._id);
-    }
-  }, [user]);
+  
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    const selectedAddress = user.addresses.find(
-      (addr) => addr._id === selectedAddressId
-    );
+  const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY);
 
-    console.log("Order submitted", {
-      deliveryType,
-      user,
-      items,
-      totalQuantity,
-      totalPrice,
-      discount,
-      selectedAddress,
-      paymentMethod,
+  // Place order function
+const handlePlaceOrder = async () => {
+  if (!items.length) {
+    toast.error("Your cart is empty!");
+    return;
+  }
+
+  setLoading(true);
+  try {
+    const res = await fetch("/api/order", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        user: user?._id,
+        items,
+        totalQuantity,
+        totalPrice,
+        deliveryType,
+        paymentMethod,
+        address,
+      }),
     });
 
-    alert(`Order placed successfully! Payment method: ${paymentMethod}`);
-    setModalOpen(false);
-  };
+    const data = await res.json();
+
+    if (data.success) {
+      if (paymentMethod === "stripe") {
+        const stripe = await stripePromise;
+        await stripe.redirectToCheckout({ sessionId: data.id });
+      } else {
+        toast.success("Order placed successfully!");
+        dispatch(clearCart());
+      }
+    } else {
+      toast.error(data.message || "Something went wrong!");
+    }
+  } catch (error) {
+    toast.error("Failed to place order.");
+  } finally {
+    setLoading(false);
+  }
+};
 
   return (
-    <div className="min-h-screen bg-gray-50 flex justify-center items-start py-10 mt-32">
-      <div className="w-full max-w-6xl grid grid-cols-1 lg:grid-cols-2 gap-8 bg-white shadow-lg rounded-2xl p-6">
-        {/* Left Side - Shipping Form */}
-        <form className="flex flex-col gap-6">
-          <h1 className="text-2xl font-bold">Checkout</h1>
+    <div className="min-h-screen bg-gray-50 py-10 mt-32">
+      <div className="container mx-auto p-6 grid md:grid-cols-2 gap-6">
+        {/* Left Side - Customer Info */}
+        <div className="space-y-6">
+          {/* Contact Info */}
+          <Card className="shadow-lg rounded-2xl">
+            <CardContent className="space-y-4 p-6">
+              <h2 className="text-xl font-semibold">Contact Information</h2>
+              <Input placeholder="Full Name" defaultValue={user?.name || ""} />
+              <Input
+                placeholder="Email Address"
+                defaultValue={user?.email || ""}
+              />
+              <Input
+                placeholder="Phone Number"
+                defaultValue={user?.mobile || ""}
+              />
+            </CardContent>
+          </Card>
 
-          {/* Delivery or Pickup */}
-          <div className="flex gap-4">
-            {["delivery", "pickup"].map((type) => (
-              <button
-                key={type}
-                type="button"
-                onClick={() => setDeliveryType(type)}
-                className={`flex-1 border rounded-xl py-3 text-center ${
-                  deliveryType === type
-                    ? "border-blue-600 bg-blue-50 text-blue-700 font-medium"
-                    : "border-gray-300 text-gray-600"
-                }`}
-              >
-                {type === "delivery" ? "🚚 Delivery" : "🏬 Pick Up"}
-              </button>
-            ))}
-          </div>
-
-          {/* Address Selection */}
-          {deliveryType === "delivery" && user?.addresses?.length > 0 && (
-            <div className="flex flex-col gap-3">
-              <h2 className="font-medium text-gray-700">Select delivery address</h2>
-              {user.addresses.map((addr, index) => (
-                <label
-                  key={index}
-                  className={`flex justify-between items-center border p-3 rounded-lg cursor-pointer ${
-                    selectedAddressId === addr._id ? "border-blue-600 bg-blue-50" : "border-gray-200"
-                  }`}
-                >
-                  <div>
-                    <p className="font-medium">{addr.label || "Address"}</p>
-                    <p className="text-sm text-gray-600">
-                      {addr.street}, {addr.city}, {addr.state}, {addr.postalCode}, {addr.country}
-                    </p>
+          {/* Delivery */}
+          <Card className="shadow-lg rounded-2xl">
+            <CardContent className="space-y-4 p-6">
+              <h2 className="text-xl font-semibold">Delivery Details</h2>
+              <div className="flex flex-wrap gap-3">
+                {user?.addresses && user.addresses.length > 0 ? (
+                  user.addresses.map((address, index) => (
+                  <div 
+                   key={index}>
+                    <Button 
+                      onClick={() => setAddress(address)} 
+                      className="p-3 border rounded-lg cursor-pointer hover:border-amber-500 transition"
+                    >
+                      <p className="font-medium">{address.street}</p>
+                      <p className="text-sm text-gray-600">
+                        {address.city}, {address.state}, {address.postalCode},{" "}
+                        {address.country}
+                      </p>
+                    </Button>
                   </div>
-                  <input
-                    type="radio"
-                    name="selectedAddress"
-                    checked={selectedAddressId === addr._id}
-                    onChange={() => setSelectedAddressId(addr._id)}
-                    className="w-4 h-4"
-                  />
-                </label>
-              ))}
-            </div>
-          )}
-
-          {/* Pre-fill from user state */}
-          <Input placeholder="Full name *" defaultValue={user?.name || ""} required />
-          <Input placeholder="Email address *" type="email" defaultValue={user?.email || ""} required />
-          <Input placeholder="Phone number *" type="tel" defaultValue={user?.mobile || ""} required />
-
-          <div className="flex items-center gap-2">
-            <Checkbox id="terms" required />
-            <label htmlFor="terms" className="text-sm text-gray-600">
-              I have read and agree to the Terms and Conditions.
-            </label>
-          </div>
-
-          <Button
-            type="button"
-            onClick={() => setModalOpen(true)} // <-- open modal
-            className="lg:hidden w-full bg-blue-600 hover:bg-blue-700 text-white text-lg py-6 rounded-xl mt-4"
-          >
-            Place Order
-          </Button>
-        </form>
+                  ))
+                ) : (
+                  <p className="text-gray-500">No saved addresses</p>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
 
         {/* Right Side - Order Summary */}
-        <Card className="border shadow-none">
-          <CardContent className="p-6 flex flex-col gap-6">
-            <h2 className="text-lg font-semibold">Review your cart</h2>
+        <div className="space-y-6">
+          <Card className="shadow-lg rounded-2xl sticky top-4">
+            <CardContent className="p-6 space-y-4">
+              <h2 className="text-xl font-semibold">Order Summary</h2>
 
-            {/* Cart Items */}
-            <div className="flex flex-col gap-4">
-              {items.length > 0 ? (
-                items.map((item, index) => (
+              <div className="space-y-3 max-h-64 overflow-y-auto pr-2 divide-y">
+                {items.map((item) => (
                   <div
-                    key={index}
-                    className="flex justify-between items-center border-b pb-3"
+                    key={item.productId}
+                    className="flex justify-between items-center py-2"
                   >
-                    <div className="flex gap-3 items-center">
+                    {/* Left side: image + details */}
+                    <div className="flex items-center gap-3">
                       <img
-                        src={item.image}
+                        src={
+                          item.image ||
+                          item.imageUrl ||
+                          item.imageUrls?.[0] ||
+                          "/placeholder.png"
+                        }
                         alt={item.name}
-                        className="w-16 h-16 rounded-md object-cover"
+                        className="w-12 h-12 object-cover rounded-md border"
                       />
                       <div>
                         <p className="font-medium">{item.name}</p>
-                        <p className="text-gray-500 text-sm">{item.quantity}x</p>
+                        {item.variant?.packetSize && (
+                          <p className="text-xs text-gray-500">
+                            Variant: {item.variant.packetSize}
+                          </p>
+                        )}
+                        <p className="text-sm text-gray-500">
+                          {item.quantity} × ${item.price}
+                        </p>
                       </div>
                     </div>
-                    <span className="font-medium">${(item.price * item.quantity).toFixed(2)}</span>
+
+                    {/* Right side: total price */}
+                    <p className="font-semibold">
+                      ${(item.price * item.quantity).toFixed(2)}
+                    </p>
                   </div>
-                ))
-              ) : (
-                <p className="text-gray-500 text-center">Your cart is empty.</p>
-              )}
-            </div>
-
-            {/* Discount Input */}
-            <div className="flex gap-2">
-              <Input
-                placeholder="Discount code"
-                value={discount}
-                onChange={(e) => setDiscount(e.target.value)}
-              />
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() =>
-                  alert(discount === "SAVE10" ? "Discount applied!" : "Invalid code")
-                }
-              >
-                Apply
-              </Button>
-            </div>
-
-            {/* Price Summary */}
-            <div className="flex flex-col gap-2 text-sm">
-              <div className="flex justify-between">
-                <span>Subtotal</span>
-                <span>${totalPrice.toFixed(2)}</span>
+                ))}
               </div>
-              <div className="flex justify-between">
-                <span>Shipping</span>
-                <span>${shippingFee.toFixed(2)}</span>
-              </div>
-              {discountAmount > 0 && (
-                <div className="flex justify-between text-green-600">
-                  <span>Discount</span>
-                  <span>- ${discountAmount.toFixed(2)}</span>
+
+              <div className="border-t pt-3 space-y-2">
+                <div className="flex justify-between text-sm">
+                  <span>Subtotal</span>
+                  <span>${totalPrice.toFixed(2)}</span>
                 </div>
-              )}
-              <div className="flex justify-between font-semibold text-lg border-t pt-2">
-                <span>Total</span>
-                <span>${finalTotal.toFixed(2)}</span>
+                <div className="flex justify-between text-sm">
+                  <span>Delivery Fee</span>
+                  <span>{deliveryType === "delivery" ? "$5.00" : "Free"}</span>
+                </div>
+                <div className="flex justify-between font-semibold text-lg">
+                  <span>Total</span>
+                  <span>
+                    $
+                    {(
+                      totalPrice + (deliveryType === "delivery" ? 5 : 0)
+                    ).toFixed(2)}
+                  </span>
+                </div>
               </div>
-            </div>
 
-            <Button
-              type="button"
-              onClick={() => setModalOpen(true)}
-              className="hidden lg:block w-full bg-blue-600 hover:bg-blue-700 text-white text-lg py-6 rounded-xl"
-            >
-              Pay Now
-            </Button>
-
-            <div className="flex items-center gap-2 text-gray-500 text-sm">
-              <Lock className="w-4 h-4" />
-              <p>Secure Checkout – Your payment details are encrypted and safe.</p>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Payment Modal */}
-        {modalOpen && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
-            <div className="bg-white rounded-2xl p-6 w-full max-w-md flex flex-col gap-4">
-              <h2 className="text-xl font-semibold">Select Payment Method</h2>
-
-              {["Cash on Delivery", "Stripe", "PayPal"].map((method) => (
-                <label key={method} className="flex items-center gap-3 p-3 border rounded-lg cursor-pointer">
-                  <input
-                    type="radio"
-                    name="paymentMethod"
-                    value={method}
-                    checked={paymentMethod === method}
-                    onChange={() => setPaymentMethod(method)}
-                    className="w-4 h-4"
-                  />
-                  <span>{method}</span>
-                </label>
-              ))}
-
-              <div className="flex justify-end gap-2 mt-4">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setModalOpen(false)}
-                >
-                  Cancel
-                </Button>
-                <Button
-                  type="button"
-                  onClick={handleSubmit}
-                  disabled={!paymentMethod}
-                >
-                  Confirm & Pay
-                </Button>
+              {/* Payment Method */}
+              <div className="space-y-4 p-6">
+                <h2 className="text-xl font-semibold">Payment Method</h2>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <Button
+                    variant={paymentMethod === "cod" ? "default" : "outline"}
+                    className="w-full py-6 flex flex-col items-center gap-2"
+                    onClick={() => setPaymentMethod("cod")}
+                  >
+                    <span className="text-sm font-medium">Cash on Delivery</span>
+                  </Button>
+                  <Button
+                    variant={paymentMethod === "stripe" ? "default" : "outline"}
+                    className="w-full py-6 flex flex-col items-center gap-2"
+                    onClick={() => setPaymentMethod("stripe")}
+                  >
+                    <span className="text-sm font-medium">Stripe</span>
+                  </Button>
+                  <Button
+                    variant={paymentMethod === "paypal" ? "default" : "outline"}
+                    className="w-full py-6 flex flex-col items-center gap-2"
+                    onClick={() => setPaymentMethod("paypal")}
+                  >
+                    <span className="text-sm font-medium">PayPal</span>
+                  </Button>
+                </div>
               </div>
-            </div>
-          </div>
-        )}
+
+              {/* Place Order Button */}
+              <Button
+                className="w-full flex items-center gap-2"
+                onClick={handlePlaceOrder}
+                disabled={loading}
+              >
+                <Lock size={18} />
+                {loading ? "Placing Order..." : "Place Order"}
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
       </div>
     </div>
   );

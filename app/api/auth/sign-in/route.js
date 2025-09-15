@@ -45,6 +45,7 @@ export async function POST(req) {
       message: "Login successful",
       customer: {
         _id: customer._id,
+        addresses: customer.addresses,
         name: customer.name,
         email: customer.email,
         mobile: customer.mobile,

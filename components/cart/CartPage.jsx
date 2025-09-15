@@ -31,7 +31,7 @@ const CartPage = ({ setCartOpen }) => {
         {!checkoutOpen && (
           <>
         <div>
-              {/* Overlay */}
+          {/* Overlay */}
             <motion.div
               className="fixed inset-0 bg-black/40 z-40"
               initial={{ opacity: 0 }}

@@ -11,6 +11,8 @@ import { setCustomer } from "@/redux/slice/customerSlice";
 
 const SettingsPage = () => {
   const user = useSelector((state) => state.customer.customer);
+
+  
   const dispatch = useDispatch();
 
   const fileInputRef = useRef(null);

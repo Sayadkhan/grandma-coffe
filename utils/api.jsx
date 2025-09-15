@@ -8,8 +8,14 @@ export const fetchCategories =  async function fetchCategories(page, limit) {
 }
 
 
-export const fetchProduct = async function fetchProducts(page, limit) {
-  const res = await fetch(`/api/product?page=${page}&limit=${limit}`);
+
+
+// lib/fetchProduct.js
+export async function fetchProduct(page = 1, limit = 10) {
+  const res = await fetch(`/api/product?page=${page}&limit=${limit}`, {
+    cache: "no-store", 
+  });
+
   if (!res.ok) throw new Error("Failed to fetch products");
   return res.json();
 }
