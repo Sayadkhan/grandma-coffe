@@ -1,6 +1,7 @@
 // utils/api.js
 
-const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
+// const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
+const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
 
 export const fetchCategories = async function fetchCategories(page = 1, limit = 10) {
   const res = await fetch(`${baseUrl}/api/categories?page=${page}&limit=${limit}`, {

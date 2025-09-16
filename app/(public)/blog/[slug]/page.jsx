@@ -3,7 +3,7 @@ import BlogDetailsModern from "./components/BlogDetailsModern";
 
 async function getBlogData(slug) {
   const baseURL =
-    process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
+    process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
 
   const res = await fetch(`${baseURL}/api/blog/${slug}`, {
     cache: "no-store",
@@ -29,7 +29,7 @@ export async function generateMetadata({ params }) {
     openGraph: {
       title: blog.title,
       description: blog.excerpt,
-      url: `${process.env.NEXT_PUBLIC_BASE_URL}/blog/${params.slug}`,
+      url: `${process.env.NEXT_PUBLIC_SITE_URL}/blog/${params.slug}`,
       siteName: "My Blog",
       images: [{ url: blog.image, width: 1200, height: 630 }],
     },

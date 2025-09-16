@@ -67,6 +67,7 @@ export async function GET(req) {
     let categories, total, totalPages;
 
     if (page && limit) {
+      // Pagination logic
       const skip = (page - 1) * limit;
 
       [categories, total] = await Promise.all([
@@ -81,18 +82,20 @@ export async function GET(req) {
 
       totalPages = Math.ceil(total / limit);
     } else {
+      // No pagination, return all categories
       categories = await Category.find({})
         .select("name desc image Featured New_Arrivable createdAt")
         .sort({ createdAt: -1 })
         .lean();
+
       total = categories.length;
       totalPages = 1;
     }
 
     return NextResponse.json({
       categories,
-      totalPages,
       total,
+      totalPages,
       currentPage: page || 1,
     });
   } catch (error) {

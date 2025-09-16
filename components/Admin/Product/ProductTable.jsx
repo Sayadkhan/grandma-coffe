@@ -13,7 +13,6 @@ import {
 } from "@/components/ui/table";
 import { Edit2, Trash2, ChevronUp, ChevronDown } from "lucide-react";
 import Link from "next/link";
-import { useProductAdmin } from "@/hooks/useProductsAdmin";
 
 // Utility for sorting
 const sortData = (data, sortKey, direction) => {
@@ -28,22 +27,19 @@ const sortData = (data, sortKey, direction) => {
   });
 };
 
-const ProductTable = () => {
-  const initialPage = 1;
-  const limit = 10;
-
-  const { products, page, setPage, total, isLoading, deleting, deleteProduct } =
-    useProductAdmin({ initialPage, limit });
-
-  const totalPages = Math.ceil(total / limit);
-
-  // Sorting state
+const ProductTable = ({ products = [], limit = 5, onDelete, deleting }) => {
+  const [page, setPage] = useState(1);
   const [sortKey, setSortKey] = useState("");
-  const [sortDir, setSortDir] = useState("asc"); // or "desc"
+  const [sortDir, setSortDir] = useState("asc");
 
   const sortedProducts = sortData(products, sortKey, sortDir);
 
-  const handleDelete = (id) => deleteProduct(id);
+  // Pagination: slice products for current page
+  const startIdx = (page - 1) * limit;
+  const endIdx = startIdx + limit;
+  const paginatedProducts = sortedProducts.slice(startIdx, endIdx);
+
+  const totalPages = Math.ceil(products.length / limit);
 
   const handleSort = (key) => {
     if (sortKey === key) {
@@ -54,7 +50,6 @@ const ProductTable = () => {
     }
   };
 
-  // Columns definition for sortable
   const columns = [
     { key: "name", label: "Name", sortable: true },
     { key: "price", label: "Price", sortable: true },
@@ -63,8 +58,7 @@ const ProductTable = () => {
     { key: "createdAt", label: "Created At", sortable: true },
   ];
 
-  // Skeleton rows while loading
-  if (isLoading) {
+  if (!products.length) {
     return (
       <div className="overflow-x-auto border rounded-lg shadow-sm">
         <Table>
@@ -78,15 +72,11 @@ const ProductTable = () => {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {Array.from({ length: limit }).map((_, idx) => (
-              <tr key={idx} className="animate-pulse">
-                <TableCell className="h-6 bg-gray-200 rounded"></TableCell>
-                {columns.map((col) => (
-                  <TableCell key={col.key} className="h-6 bg-gray-200 rounded"></TableCell>
-                ))}
-                <TableCell className="h-6 bg-gray-200 rounded"></TableCell>
-              </tr>
-            ))}
+            <tr>
+              <TableCell colSpan={columns.length + 2} className="text-center text-gray-500 py-6">
+                No products found.
+              </TableCell>
+            </tr>
           </TableBody>
         </Table>
       </div>
@@ -118,29 +108,17 @@ const ProductTable = () => {
           </TableHeader>
           <TableBody>
             <AnimatePresence>
-              {sortedProducts.length === 0 ? (
-                <motion.tr
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                >
-                  <TableCell colSpan={columns.length + 2} className="text-center text-gray-500 py-6">
-                    No products found.
-                  </TableCell>
-                </motion.tr>
-              ) : (
-                sortedProducts.map((product, idx) => (
-                  <ProductRow
-                    key={product._id}
-                    product={product}
-                    idx={idx}
-                    page={page}
-                    limit={limit}
-                    onDelete={handleDelete}
-                    deleting={deleting}
-                  />
-                ))
-              )}
+              {paginatedProducts.map((product, idx) => (
+                <ProductRow
+                  key={product._id}
+                  product={product}
+                  idx={idx}
+                  page={page}
+                  limit={limit}
+                  onDelete={onDelete}
+                  deleting={deleting}
+                />
+              ))}
             </AnimatePresence>
           </TableBody>
         </Table>
@@ -154,7 +132,12 @@ const ProductTable = () => {
 
         <div className="flex items-center gap-2">
           {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
-            <Button key={p} variant={p === page ? "default" : "outline"} size="sm" onClick={() => setPage(p)}>
+            <Button
+              key={p}
+              variant={p === page ? "default" : "outline"}
+              size="sm"
+              onClick={() => setPage(p)}
+            >
               {p}
             </Button>
           ))}
