@@ -1,18 +1,19 @@
+// utils/api.js
 
+const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
 
-export const fetchCategories =  async function fetchCategories(page, limit) {
+export const fetchCategories = async function fetchCategories(page = 1, limit = 10) {
+  const res = await fetch(`${baseUrl}/api/categories?page=${page}&limit=${limit}`, {
+    cache: "no-store", 
+  });
 
-  const res = await fetch(`/api/categories?page=${page}&limit=${limit}`);
   if (!res.ok) throw new Error("Failed to fetch categories");
   return res.json();
-}
-
-
-
+};
 
 // lib/fetchProduct.js
 export async function fetchProduct(page = 1, limit = 10) {
-  const res = await fetch(`/api/product?page=${page}&limit=${limit}`, {
+  const res = await fetch(`${baseUrl}/api/product?page=${page}&limit=${limit}`, {
     cache: "no-store", 
   });
 
