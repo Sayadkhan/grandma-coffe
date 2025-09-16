@@ -13,6 +13,19 @@ const AddressSchema = new mongoose.Schema(
   { _id: false } // no separate _id for each address
 );
 
+const CartItemSchema = new mongoose.Schema(
+  {
+    productId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Product",
+      required: true,
+    },
+    quantity: { type: Number, required: true, min: 1 },
+    variant: { type: String, default: "" },
+  },
+  { _id: false }
+);
+
 const CustomerSchema = new mongoose.Schema(
   {
     name: { type: String, required: true },
@@ -21,6 +34,7 @@ const CustomerSchema = new mongoose.Schema(
     mobile: { type: String, required: true },
     profileImage: { type: String },
     addresses: { type: [AddressSchema], default: [] },
+    cartItem: { type: [CartItemSchema], default: [] },
   },
   { timestamps: true }
 );

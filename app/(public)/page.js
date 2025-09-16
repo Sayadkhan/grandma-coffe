@@ -1,5 +1,3 @@
-"use client";
-
 import NewsletterSection from "@/components/common/NewsletterSection";
 import BandStory from "@/components/Home/BandStorySection";
 import Featured from "@/components/Home/featured/FeaturedCategory";

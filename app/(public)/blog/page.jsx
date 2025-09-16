@@ -18,7 +18,7 @@ function BlogList() {
   const { data: blogs } = useQuery({
     queryKey: ["blogs"],
     queryFn: fetchBlogs,
-    suspense: true, // let Suspense handle loading
+    suspense: true, 
   });
 
   return (

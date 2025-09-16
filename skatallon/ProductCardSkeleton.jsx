@@ -1,7 +1,9 @@
 
 const ProductCardSkeleton = ({ count = 3 }) => {
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+
+    <div className="h-min-screen pt-32 bg-white">
+         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
       {Array.from({ length: count }).map((_, idx) => (
         <div
           key={idx}
@@ -14,6 +16,7 @@ const ProductCardSkeleton = ({ count = 3 }) => {
           </div>
         </div>
       ))}
+    </div>
     </div>
   )
 }

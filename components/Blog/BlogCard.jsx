@@ -14,11 +14,14 @@ const BlogCard = ({ blog, index }) => {
       className="bg-white rounded-xl shadow hover:shadow-xl transition overflow-hidden"
     >
       {/* Image + Category */}
-      <div className="relative w-full h-52">
+      <div className="relative w-full h-52 overflow-hidden">
         <Image
           src={blog.image}
           alt={blog.title}
-          fill
+          width={400}
+          height={400}
+          // fill
+          priority
           className="object-cover"
         />
         <span className="absolute top-3 left-3 bg-[#2c1e1b] text-white text-xs font-medium px-3 py-1 rounded-full">
