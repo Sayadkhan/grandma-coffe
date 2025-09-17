@@ -11,7 +11,7 @@ export default function ProtectedRoute({ children }) {
 
   useEffect(() => {
     if (!user && pathname.startsWith("/user")) {
-      router.push("/login");
+      router.push("/");
     }
 
     // ✅ If logged in and trying to access /login or /signup

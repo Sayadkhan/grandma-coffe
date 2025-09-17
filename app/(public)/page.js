@@ -5,13 +5,18 @@ import CarouselDemo from "@/components/Home/HeroCarousel";
 import ProductSection from "@/components/Home/Product/ProductSection";
 import ProductSlider from "@/components/Home/ProductSliderSection";
 import WholesaleHero from "@/components/Home/WholeSell";
-
 import { Suspense } from "react";
 
 // ✅ Example server fetchers
 async function getProducts() {
   const baseURL = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
   const res = await fetch(`${baseURL}/api/products`, { cache: "no-store" });
+  if (!res.ok) return [];
+  return res.json();
+}
+async function getCategories() {
+  const baseURL = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
+  const res = await fetch(`${baseURL}/api/categories`, { cache: "no-store" });
   if (!res.ok) return [];
   return res.json();
 }
@@ -58,12 +63,14 @@ export async function generateMetadata() {
 
 // ✅ Home Page (Server Component)
 export default async function HomePage() {
-  const [products] = await Promise.all([
+  const [products, category] = await Promise.all([
     getProducts(),
     // getFeatured(),
+    getCategories(),
   ]);
 
-  console.log();
+  console.log("Products on HomePage:", products);
+  console.log("Products on HomePage:", category);
 
   const slides = [
     {
@@ -92,14 +99,46 @@ export default async function HomePage() {
     },
   ];
 
+  //     <BlogList blogs={blogs} />
+  //
+
   return (
     <div>
       <CarouselDemo slides={slides} />
 
       {/* Products */}
+      <Suspense
+        fallback={
+          <div className="grid gap-10 md:grid-cols-2 lg:grid-cols-4">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <div
+                key={i}
+                className="h-64 bg-gray-200 rounded-xl animate-pulse"
+              />
+            ))}
+          </div>
+        }
+      >
+        <ProductSlider
+          products={products.products}
+          category={category.categories}
+        />
+      </Suspense>
 
-      <ProductSlider products={products.products} />
-      <ProductSection products={products} />
+      <Suspense
+        fallback={
+          <div className="grid gap-10 md:grid-cols-2 lg:grid-cols-4">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <div
+                key={i}
+                className="h-64 bg-gray-200 rounded-xl animate-pulse"
+              />
+            ))}
+          </div>
+        }
+      >
+        <ProductSection products={products.products} />
+      </Suspense>
 
       {/* Featured */}
 

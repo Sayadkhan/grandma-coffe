@@ -1,4 +1,4 @@
-"use client";
+
 
 import React, { Suspense } from "react";
 import { motion } from "framer-motion";
@@ -6,33 +6,48 @@ import Link from "next/link";
 import AboutHero from "@/components/About/AboutHero";
 import BlogCard from "@/components/Blog/BlogCard";
 import { useQuery } from "@tanstack/react-query";
+import BlogList from "./components/BlogList";
 
 // fetcher
 async function fetchBlogs() {
-  const res = await fetch("/api/blog", { cache: "no-store" });
+  const baseURL = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
+  const res = await fetch(`${baseURL}/api/blog`, { cache: "no-store" });
   if (!res.ok) throw new Error("Failed to fetch blogs");
   return res.json();
 }
 
-function BlogList() {
-  const { data: blogs } = useQuery({
-    queryKey: ["blogs"],
-    queryFn: fetchBlogs,
-    suspense: true, 
-  });
-
-  return (
-    <div className="grid gap-10 md:grid-cols-2 lg:grid-cols-4">
-      {blogs.map((blog, index) => (
-        <Link key={blog._id} href={`/blog/${blog._id}`}>
-          <BlogCard blog={blog} index={index} />
-        </Link>
-      ))}
-    </div>
-  );
+async function getCategories() {
+  const baseURL = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
+  const res = await fetch(`${baseURL}/api/categories`, { cache: "no-store" });
+  if (!res.ok) return [];
+  return res.json();
 }
 
-const BlogPage = () => {
+// function BlogList() {
+
+
+//   return (
+//     <div className="grid gap-10 md:grid-cols-2 lg:grid-cols-4">
+//       {blogs.map((blog, index) => (
+//         <Link key={blog._id} href={`/blog/${blog._id}`}>
+//           <BlogCard blog={blog} index={index} />
+//         </Link>
+//       ))}
+//     </div>
+//   );
+// }
+
+const BlogPage = async () => {
+
+  const [blogs] = await Promise.all([
+    fetchBlogs(),
+    // getFeatured(),
+   
+  ]);
+
+  console.log("Blogs data:", blogs);
+
+
   return (
     <div className="bg-[#f9f7f4] min-h-screen">
       {/* Blog Hero */}
@@ -45,14 +60,14 @@ const BlogPage = () => {
 
       {/* Blog Section */}
       <div className="container mx-auto px-6 py-16">
-        <motion.h1
+        <h1
           initial={{ opacity: 0, y: -30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8 }}
           className="text-4xl md:text-5xl font-bold text-center text-[#2c1e1b] mb-12"
         >
           Latest Articles
-        </motion.h1>
+        </h1>
 
         <Suspense
           fallback={
@@ -66,7 +81,7 @@ const BlogPage = () => {
             </div>
           }
         >
-          <BlogList />
+          <BlogList blogs={blogs} />
         </Suspense>
       </div>
     </div>

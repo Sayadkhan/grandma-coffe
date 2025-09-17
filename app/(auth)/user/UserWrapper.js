@@ -42,16 +42,8 @@ export default function UserLayout({ children }) {
               {/* Profile Section */}
               <div className="flex flex-col items-center gap-2 mb-6">
                 <div className="w-16 h-16 rounded-full border-2 border-amber-600 overflow-hidden">
-                  {/* <img
-                  src={
-                    user?.profileImage ||
-                    "https://via.placeholder.com/150?text=User"
-                  }
-                  alt={user?.name || "User"}
-                  className="w-full h-full object-cover"
-                /> */}
                   <Image
-                    src={user?.profileImage}
+                    src={user?.profileImage || ""}
                     alt={user?.name || "User"}
                     width={64}
                     height={64}

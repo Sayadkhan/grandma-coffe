@@ -15,7 +15,7 @@ import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
 
 import ProductCardSkeleton from "@/skatallon/ProductCardSkeleton";
-import { useCategories } from "@/hooks/useCategory";
+
 
 // ------------------- Product Carousel -------------------
 function ProductCarousel({ selectedCategory, products }) {
@@ -88,12 +88,12 @@ function ProductCarousel({ selectedCategory, products }) {
 }
 
 // ------------------- Main Component -------------------
-export default function ProductSlider({ products = [] }) {
+export default function ProductSlider({ products = [], category=[] }) {
   const [selectedCategory, setSelectedCategory] = useState("All");
 
   // fetch categories
-  const { data: categoryData, isLoading: categoriesLoading } = useCategories();
-  const categories = ["All", ...(categoryData?.categories?.map((c) => c.name) || [])];
+
+  const categories = ["All", ...(category.map((c) => c.name) || [])];
 
   return (
     <div className="container mx-auto px-4 py-12">
@@ -116,9 +116,7 @@ export default function ProductSlider({ products = [] }) {
 
           {/* Category Filter Buttons */}
           <div className="flex flex-wrap gap-2 justify-center md:justify-start">
-            {categoriesLoading ? (
-              <span className="text-gray-500">Loading...</span>
-            ) : (
+            {
               categories.map((category) => (
                 <Button
                   key={category}
@@ -133,7 +131,7 @@ export default function ProductSlider({ products = [] }) {
                   {category}
                 </Button>
               ))
-            )}
+            }
           </div>
         </motion.div>
 
