@@ -17,6 +17,11 @@ const CheckoutPage = () => {
   const user = useSelector((state) => state.customer.customer);
   const dispatch = useDispatch();
 
+ 
+  
+  
+  const filterIteambyUser = items.filter(item => item.userId === user?._id);
+
   const [deliveryType, setDeliveryType] = useState("delivery");
   const [paymentMethod, setPaymentMethod] = useState("cod");
   const [loading, setLoading] = useState(false);
@@ -33,6 +38,11 @@ const handlePlaceOrder = async () => {
     return;
   }
 
+  if(!address) {
+    toast.error("Please select or enter a delivery address.");
+    return;
+  }
+
   setLoading(true);
   try {
     const res = await fetch("/api/order", {
@@ -40,7 +50,7 @@ const handlePlaceOrder = async () => {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         user: user?._id,
-        items,
+        filterIteambyUser,
         totalQuantity,
         totalPrice,
         deliveryType,
@@ -90,35 +100,92 @@ const handlePlaceOrder = async () => {
             </CardContent>
           </Card>
 
-          {/* Delivery */}
-          <Card className="shadow-lg rounded-2xl">
-            <CardContent className="space-y-4 p-6">
-              <h2 className="text-xl font-semibold">Delivery Details</h2>
-              <div className="flex flex-wrap gap-3">
-                {user?.addresses && user.addresses.length > 0 ? (
-                  user.addresses.map((address, index) => (
-                  <div 
-                   key={index}>
-                    <Button 
-                      onClick={() => setAddress(address)} 
-                      className="p-3 border rounded-lg cursor-pointer hover:border-amber-500 transition"
-                    >
-                      <p className="font-medium">{address.street}</p>
-                      <p className="text-sm text-gray-600">
-                        {address.city}, {address.state}, {address.postalCode},{" "}
-                        {address.country}
-                      </p>
-                    </Button>
-                  </div>
-                  ))
-                ) : (
-                  <p className="text-gray-500">No saved addresses</p>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+     
+        {/* Delivery */}
+      <Card className="shadow-lg rounded-2xl">
+        <CardContent className="space-y-4 p-6">
+          <h2 className="text-xl font-semibold">Delivery Details</h2>
+          <div className="flex flex-wrap gap-3">
+            {user?.addresses && user.addresses.length > 0 ? (
+              user.addresses.map((address, index) => (
+                <div key={index}>
+                  <Button
+                    onClick={() => setAddress(address)}
+                    className={`p-3 border rounded-lg cursor-pointer hover:border-amber-500 transition ${
+                      address === address ? "border-amber-500" : ""
+                    }`}
+                  >
+                    <p className="font-medium">{address.street}</p>
+                    <p className="text-sm text-gray-600">
+                      {address.city}, {address.state}, {address.postalCode},{" "}
+                      {address.country}
+                    </p>
+                  </Button>
+                </div>
+              ))
+            ) : (
+              <div className="space-y-3 w-full">
+                <p className="text-gray-500">No saved addresses</p>
 
+                {/* Manual Address Form */}
+                <div className="space-y-2">
+                  <Input
+                    placeholder="Street"
+                    onChange={(e) =>
+                      setAddress({ ...address, street: e.target.value })
+                    }
+                  />
+                  <Input
+                    placeholder="City"
+                    onChange={(e) =>
+                      setAddress({ ...address, city: e.target.value })
+                    }
+                  />
+                  <Input
+                    placeholder="State"
+                    onChange={(e) =>
+                      setAddress({ ...address, state: e.target.value })
+                    }
+                  />
+                  <Input
+                    placeholder="Postal Code"
+                    onChange={(e) =>
+                      setAddress({ ...address, postalCode: e.target.value })
+                    }
+                  />
+                  <Input
+                    placeholder="Country"
+                    onChange={(e) =>
+                      setAddress({ ...address, country: e.target.value })
+                    }
+                  />
+
+                  <Button
+                    onClick={() => {
+                      if (
+                        address?.street &&
+                        address?.city &&
+                        address?.state &&
+                        address?.postalCode &&
+                        address?.country
+                      ) {
+                        toast.success("Address saved!");
+                       
+                      } else {
+                        toast.error("Please fill all fields.");
+                      }
+                    }}
+                    className="w-full"
+                  >
+                    Save Address
+                  </Button>
+                </div>
+              </div>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+    </div>
         {/* Right Side - Order Summary */}
         <div className="space-y-6">
           <Card className="shadow-lg rounded-2xl sticky top-4">
@@ -126,7 +193,7 @@ const handlePlaceOrder = async () => {
               <h2 className="text-xl font-semibold">Order Summary</h2>
 
               <div className="space-y-3 max-h-64 overflow-y-auto pr-2 divide-y">
-                {items.map((item) => (
+                {filterIteambyUser.map((item) => (
                   <div
                     key={item.productId}
                     className="flex justify-between items-center py-2"

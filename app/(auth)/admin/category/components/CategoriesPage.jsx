@@ -2,44 +2,120 @@
 
 import { motion, AnimatePresence } from "framer-motion";
 import { useRouter } from "next/navigation";
-import { useQueryClient } from "@tanstack/react-query";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  useQuery,
+  useQueryClient,
+  useMutation,
+} from "@tanstack/react-query";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Edit2, Trash2 } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 
 const CategoriesPage = ({ initialData, page, limit }) => {
-  const { categories, totalPages } = initialData;
   const queryClient = useQueryClient();
   const router = useRouter();
 
-  const handleDelete = async (id) => {
-    if (!confirm("Are you sure you want to delete this category?")) return;
-    try {
-      const res = await fetch(`/api/categories/${id}`, { method: "DELETE" });
-      if (res.ok) {
-        queryClient.invalidateQueries(["categories"]);
-        router.refresh(); // ✅ refresh server data
-      }
-    } catch (err) {
-      console.error(err);
-    }
-  };
+  // ✅ Use React Query, hydrate SSR data
+  const { data } = useQuery({
+    queryKey: ["categories", page, limit],
+    queryFn: async () => {
+      const res = await fetch(`/api/categories?page=${page}&limit=${limit}`);
+      if (!res.ok) throw new Error("Failed to fetch categories");
+      return res.json();
+    },
+    initialData, // ✅ hydration
+  });
 
-  const updateCategory = async (id, field, value) => {
-    try {
+  const { categories, totalPages } = data;
+
+  // ✅ Mutation with optimistic updates
+  const updateMutation = useMutation({
+    mutationFn: async ({ id, field, value }) => {
       const res = await fetch(`/api/categories/${id}`, {
         method: "PATCH",
         body: JSON.stringify({ [field]: value }),
         headers: { "Content-Type": "application/json" },
       });
-      if (res.ok) {
-        router.refresh(); // ✅ sync with SSR data
+      if (!res.ok) throw new Error("Failed to update");
+      return { id, field, value };
+    },
+    onMutate: async ({ id, field, value }) => {
+      await queryClient.cancelQueries(["categories", page, limit]);
+      const prevData = queryClient.getQueryData([
+        "categories",
+        page,
+        limit,
+      ]);
+
+      queryClient.setQueryData(["categories", page, limit], (old) => {
+        if (!old) return old;
+        return {
+          ...old,
+          categories: old.categories.map((cat) =>
+            cat._id === id ? { ...cat, [field]: value } : cat
+          ),
+        };
+      });
+
+      return { prevData };
+    },
+    onError: (err, vars, ctx) => {
+      if (ctx?.prevData) {
+        queryClient.setQueryData(
+          ["categories", page, limit],
+          ctx.prevData
+        );
       }
-    } catch (err) {
-      console.error(err);
-    }
-  };
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries(["categories", page, limit]); // ✅ background refetch
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async (id) => {
+      const res = await fetch(`/api/categories/${id}`, { method: "DELETE" });
+      if (!res.ok) throw new Error("Failed to delete");
+      return id;
+    },
+    onMutate: async (id) => {
+      await queryClient.cancelQueries(["categories", page, limit]);
+      const prevData = queryClient.getQueryData([
+        "categories",
+        page,
+        limit,
+      ]);
+
+      queryClient.setQueryData(["categories", page, limit], (old) => {
+        if (!old) return old;
+        return {
+          ...old,
+          categories: old.categories.filter((cat) => cat._id !== id),
+        };
+      });
+
+      return { prevData };
+    },
+    onError: (err, id, ctx) => {
+      if (ctx?.prevData) {
+        queryClient.setQueryData(
+          ["categories", page, limit],
+          ctx.prevData
+        );
+      }
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries(["categories", page, limit]);
+    },
+  });
 
   return (
     <>
@@ -78,14 +154,24 @@ const CategoriesPage = ({ initialData, page, limit }) => {
                         alt={cat.name}
                         className="w-12 h-12 rounded-lg object-cover border"
                       />
-                    ) : "—"}
+                    ) : (
+                      "—"
+                    )}
                   </TableCell>
-                  <TableCell>{new Date(cat.createdAt).toLocaleDateString()}</TableCell>
+                  <TableCell>
+                    {new Date(cat.createdAt).toLocaleDateString()}
+                  </TableCell>
                   <TableCell>
                     <div className="flex items-center justify-center">
                       <Switch
                         checked={cat.Featured}
-                        onCheckedChange={(val) => updateCategory(cat._id, "Featured", val)}
+                        onCheckedChange={(val) =>
+                          updateMutation.mutate({
+                            id: cat._id,
+                            field: "Featured",
+                            value: val,
+                          })
+                        }
                         className="data-[state=checked]:bg-amber-600"
                       />
                     </div>
@@ -94,7 +180,13 @@ const CategoriesPage = ({ initialData, page, limit }) => {
                     <div className="flex items-center justify-center">
                       <Switch
                         checked={cat.New_Arrivable}
-                        onCheckedChange={(val) => updateCategory(cat._id, "New_Arrivable", val)}
+                        onCheckedChange={(val) =>
+                          updateMutation.mutate({
+                            id: cat._id,
+                            field: "New_Arrivable",
+                            value: val,
+                          })
+                        }
                         className="data-[state=checked]:bg-blue-600"
                       />
                     </div>
@@ -105,7 +197,9 @@ const CategoriesPage = ({ initialData, page, limit }) => {
                         variant="ghost"
                         size="sm"
                         className="flex items-center gap-1 hover:text-blue-600"
-                        onClick={() => router.push(`/admin/category/edit/${cat._id}`)}
+                        onClick={() =>
+                          router.push(`/admin/category/edit/${cat._id}`)
+                        }
                       >
                         <Edit2 size={16} />
                         Edit
@@ -114,7 +208,7 @@ const CategoriesPage = ({ initialData, page, limit }) => {
                         variant="destructive"
                         size="sm"
                         className="flex items-center gap-1 hover:bg-red-700 hover:text-white"
-                        onClick={() => handleDelete(cat._id)}
+                        onClick={() => deleteMutation.mutate(cat._id)}
                       >
                         <Trash2 size={16} />
                         Delete
@@ -150,6 +244,6 @@ const CategoriesPage = ({ initialData, page, limit }) => {
       </div>
     </>
   );
-}
+};
 
 export default CategoriesPage;

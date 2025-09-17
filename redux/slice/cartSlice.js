@@ -36,20 +36,21 @@ const cartSlice = createSlice({
   initialState,
   reducers: {
     addToCart: (state, action) => {
-      const { productId, name, price, quantity, variant, image } =
+      const { productId, name, price, quantity, variant, image, userId } =
         action.payload;
 
-      // ✅ Ensure uniqueness by productId + variant._id (if exists)
       const existingItem = state.items.find(
         (item) =>
           item.productId === productId &&
-          (variant?._id ? item.variant?._id === variant._id : !item.variant)
+          (variant?._id ? item.variant?._id === variant._id : !item.variant) &&
+          item.userId === action.payload.userId
       );
 
       if (existingItem) {
         existingItem.quantity += quantity;
       } else {
         state.items.push({
+          userId,
           productId,
           name,
           price,
@@ -70,9 +71,9 @@ const cartSlice = createSlice({
       );
 
       saveCartToStorage(state);
-      toast.success(
-        `✅ Added ${quantity} x ${variant?.name ? variant.name : name} to cart`
-      );
+      // toast.success(
+      //   `✅ Added ${quantity} x ${variant?.name ? variant.name : name} to cart`
+      // );
     },
 
     removeFromCart: (state, action) => {

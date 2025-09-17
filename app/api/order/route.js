@@ -11,7 +11,7 @@ export async function POST(req) {
   try {
     await connectDB();
     const body = await req.json();
-    const { paymentMethod, items, totalPrice } = body;
+    const { paymentMethod, filterIteambyUser, totalPrice } = body;
 
     // const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
     const baseUrl = "http://localhost:3000";
@@ -26,7 +26,7 @@ export async function POST(req) {
     if (paymentMethod === "stripe") {
       const session = await stripe.checkout.sessions.create({
         payment_method_types: ["card"],
-        line_items: items.map((item) => ({
+        line_items: filterIteambyUser.map((item) => ({
           price_data: {
             currency: "usd",
             product_data: {

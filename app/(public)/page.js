@@ -6,82 +6,65 @@ import ProductSection from "@/components/Home/Product/ProductSection";
 import ProductSlider from "@/components/Home/ProductSliderSection";
 import WholesaleHero from "@/components/Home/WholeSell";
 
-import React, { Suspense } from "react";
-import { Card, CardContent } from "@/components/ui/card";
-import ProductCardSkeleton from "@/skatallon/ProductCardSkeleton";
+import { Suspense } from "react";
 
-// ------------------- Skeleton Variants -------------------
-
-// Generic card skeleton
-function CardSkeleton({ height = "h-48" }) {
-  return (
-    <Card className="overflow-hidden rounded-lg shadow-sm">
-      <CardContent className="p-0">
-        <div className={`w-full bg-gray-200 animate-pulse ${height}`} />
-      </CardContent>
-    </Card>
-  );
+// ✅ Example server fetchers
+async function getProducts() {
+  const baseURL = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
+  const res = await fetch(`${baseURL}/api/products`, { cache: "no-store" });
+  if (!res.ok) return [];
+  return res.json();
 }
 
-// Product section → use your existing product card skeletons
-function ProductSectionSkeleton({ count = 3 }) {
-  return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 py-8">
-      {Array.from({ length: count }).map((_, i) => (
-        <ProductCardSkeleton key={i} />
-      ))}
-    </div>
-  );
+// async function getFeatured() {
+//   const baseURL = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
+//   const res = await fetch(`${baseURL}/api/featured`, { cache: "no-store" });
+//   if (!res.ok) return [];
+//   return res.json();
+// }
+
+// ✅ Dynamic Metadata
+export async function generateMetadata() {
+  return {
+    title: "Home | My Coffee Store",
+    description:
+      "Shop premium coffee blends, explore stories, and discover more.",
+    alternates: {
+      canonical: `${process.env.NEXT_PUBLIC_SITE_URL}/`,
+    },
+    openGraph: {
+      title: "My Coffee Store",
+      description: "Freshly roasted coffee delivered to your door.",
+      url: `${process.env.NEXT_PUBLIC_SITE_URL}/`,
+      siteName: "My Coffee Store",
+      images: [
+        {
+          url: "https://images.pexels.com/photos/324028/pexels-photo-324028.jpeg",
+          width: 1200,
+          height: 630,
+        },
+      ],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: "My Coffee Store",
+      description: "Freshly roasted coffee delivered to your door.",
+      images: [
+        "https://images.pexels.com/photos/324028/pexels-photo-324028.jpeg",
+      ],
+    },
+  };
 }
 
-// Featured category skeleton (smaller cards)
-function FeaturedSkeleton({ count = 3 }) {
-  return (
-    <div className="grid grid-cols-2 md:grid-cols-3 gap-6 py-8">
-      {Array.from({ length: count }).map((_, i) => (
-        <CardSkeleton key={i} height="h-40" />
-      ))}
-    </div>
-  );
-}
+// ✅ Home Page (Server Component)
+export default async function HomePage() {
+  const [products] = await Promise.all([
+    getProducts(),
+    // getFeatured(),
+  ]);
 
-// Story section skeleton (usually wider blocks)
-function BandStorySkeleton() {
-  return (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-8 py-8">
-      <CardSkeleton height="h-64" />
-      <div className="space-y-4">
-        <div className="h-8 w-2/3 bg-gray-200 animate-pulse rounded"></div>
-        <div className="h-6 w-full bg-gray-200 animate-pulse rounded"></div>
-        <div className="h-6 w-5/6 bg-gray-200 animate-pulse rounded"></div>
-        <div className="h-6 w-3/4 bg-gray-200 animate-pulse rounded"></div>
-      </div>
-    </div>
-  );
-}
+  console.log();
 
-// Wholesale hero skeleton (big banner-like block)
-function WholesaleSkeleton() {
-  return (
-    <div className="py-12">
-      <CardSkeleton height="h-72" />
-    </div>
-  );
-}
-
-// Newsletter skeleton (shorter form-style block)
-function NewsletterSkeleton() {
-  return (
-    <div className="py-12 space-y-4">
-      <div className="h-8 w-1/3 bg-gray-200 animate-pulse rounded"></div>
-      <div className="h-6 w-2/3 bg-gray-200 animate-pulse rounded"></div>
-      <div className="h-12 w-full bg-gray-200 animate-pulse rounded"></div>
-    </div>
-  );
-}
-
-// ------------------- Page -------------------
-const page = () => {
   const slides = [
     {
       id: 1,
@@ -114,62 +97,25 @@ const page = () => {
       <CarouselDemo slides={slides} />
 
       {/* Products */}
-      <Suspense
-        fallback={
-          <div className="container mx-auto px-4">
-            <ProductSectionSkeleton count={3} />
-          </div>
-        }
-      >
-        <ProductSlider />
-        <ProductSection />
-      </Suspense>
+
+      <ProductSlider products={products.products} />
+      <ProductSection products={products} />
 
       {/* Featured */}
-      <Suspense
-        fallback={
-          <div className="container mx-auto px-4">
-            <FeaturedSkeleton count={3} />
-          </div>
-        }
-      >
-        <Featured />
-      </Suspense>
+
+      <Featured />
 
       {/* Story */}
-      <Suspense
-        fallback={
-          <div className="container mx-auto px-4">
-            <BandStorySkeleton />
-          </div>
-        }
-      >
-        <BandStory />
-      </Suspense>
+
+      <BandStory />
 
       {/* Wholesale */}
-      <Suspense
-        fallback={
-          <div className="container mx-auto px-4">
-            <WholesaleSkeleton />
-          </div>
-        }
-      >
-        <WholesaleHero />
-      </Suspense>
+
+      <WholesaleHero />
 
       {/* Newsletter */}
-      <Suspense
-        fallback={
-          <div className="container mx-auto px-4">
-            <NewsletterSkeleton />
-          </div>
-        }
-      >
-        <NewsletterSection />
-      </Suspense>
+
+      <NewsletterSection />
     </div>
   );
-};
-
-export default page;
+}

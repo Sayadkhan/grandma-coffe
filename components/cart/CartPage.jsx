@@ -15,10 +15,19 @@ const CartPage = ({ setCartOpen }) => {
     (state) => state.cart
   );
 
+  const user = useSelector((state) => state.customer.customer);
+
+
+
+const filterIteambyUser = items.filter(item => item.userId === user?._id);
+
+
+  
+
   const router = useRouter();
   const [checkoutOpen, setCheckoutOpen] = useState(false);
 
-  // Open modal and close sidebar
+
   const openCheckout = () => {
     setCartOpen(false); // close sidebar
     router.push("/checkout");
@@ -63,12 +72,12 @@ const CartPage = ({ setCartOpen }) => {
 
               {/* Cart Items */}
               <div className="flex-1 p-4 overflow-y-auto space-y-4">
-                {items.length === 0 ? (
+                {filterIteambyUser.length === 0  ? (
                   <p className="text-center text-gray-500">
                     🛒 No items in your cart yet.
                   </p>
                 ) : (
-                  items.map((item) => (
+                  filterIteambyUser.map((item) => (
                     <motion.div
                       key={item.productId + (item.variant?._id || "base")}
                       className="flex items-center gap-4 p-3 bg-gray-50 rounded-lg shadow-sm"
@@ -120,7 +129,7 @@ const CartPage = ({ setCartOpen }) => {
               </div>
 
               {/* Footer */}
-              {items.length > 0 && (
+              {filterIteambyUser.length > 0 && (
                 <div className="border-t px-6 py-4 bg-gray-50">
                   <div className="flex justify-between text-amber-900 font-medium">
                     <span>Total ({totalQuantity} items)</span>

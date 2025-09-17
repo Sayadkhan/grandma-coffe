@@ -21,3 +21,12 @@ export async function fetchProduct(page = 1, limit = 10) {
   if (!res.ok) throw new Error("Failed to fetch products");
   return res.json();
 }
+
+
+export const featchAllCategory = async function featchAllCategory() {
+  const res = await fetch(`${baseUrl}/api/categories`, {
+    cache: "no-store", 
+  })
+  if (!res.ok) throw new Error("Failed to fetch All categories");
+  return res.json();
+}

@@ -7,17 +7,25 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useSelector } from "react-redux";
 import CartPage from "../cart/CartPage";
 
-
 const Navbar = () => {
   const [hoveredLink, setHoveredLink] = useState(null);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [openSubmenu, setOpenSubmenu] = useState(null);
   const [cartOpen, setCartOpen] = useState(false);
-  const [isScrolled, setIsScrolled] = useState(false);
+  const [mounted, setMounted] = useState(false);
 
-   const user = useSelector((state) => state.customer.customer);
-   
+  // Redux state
+  const { items } = useSelector((state) => state.cart);
+  const user = useSelector((state) => state.customer.customer);
 
+  // Wait for hydration
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  // Filter cart items only if mounted
+  const filterIteambyUser =
+    mounted && user ? items.filter((item) => item.userId === user?._id) : [];
 
   const navLinks = [
     { name: "Home", href: "/" },
@@ -30,17 +38,20 @@ const Navbar = () => {
         {
           name: "Our Story",
           href: "/about/story",
-          image: "https://images.pexels.com/photos/2074120/pexels-photo-2074120.jpeg",
+          image:
+            "https://images.pexels.com/photos/2074120/pexels-photo-2074120.jpeg",
         },
         {
           name: "Our Process",
           href: "/about/process",
-          image: "https://images.pexels.com/photos/4350055/pexels-photo-4350055.jpeg",
+          image:
+            "https://images.pexels.com/photos/4350055/pexels-photo-4350055.jpeg",
         },
         {
           name: "Our People",
           href: "/about/people",
-          image: "https://images.pexels.com/photos/5926957/pexels-photo-5926957.jpeg",
+          image:
+            "https://images.pexels.com/photos/5926957/pexels-photo-5926957.jpeg",
         },
       ],
     },
@@ -67,7 +78,13 @@ const Navbar = () => {
         <div className="container mx-auto flex items-center justify-between px-4 py-2">
           {/* Logo */}
           <Link prefetch={false} href="/" className="flex items-center gap-2">
-            <Image src="/logo-removebg-preview.png" width={80} height={80} alt="logo" priority />
+            <Image
+              src="/logo-removebg-preview.png"
+              width={80}
+              height={80}
+              alt="logo"
+              priority
+            />
           </Link>
 
           {/* Navigation Links */}
@@ -78,10 +95,14 @@ const Navbar = () => {
                   prefetch={false}
                   key={idx}
                   href={link.href}
-                  onMouseEnter={() => setHoveredLink(link.subMenu ? link.name : null)}
+                  onMouseEnter={() =>
+                    setHoveredLink(link.subMenu ? link.name : null)
+                  }
                   onClick={() => setHoveredLink(null)}
                   className={`relative font-medium transition-colors duration-300 ease-in-out ${
-                    hoveredLink === link.name ? "text-amber-700" : "text-amber-900"
+                    hoveredLink === link.name
+                      ? "text-amber-700"
+                      : "text-amber-900"
                   }`}
                 >
                   {link.name}
@@ -97,7 +118,7 @@ const Navbar = () => {
 
           {/* Right Section - Desktop */}
           <div className="flex items-center gap-4 relative">
-            {user ? (
+            {mounted && user ? (
               <div className="relative">
                 {/* Profile Image */}
                 <button
@@ -146,7 +167,7 @@ const Navbar = () => {
                 </AnimatePresence>
               </div>
             ) : (
-              <>
+              <div className="flex items-center gap-2">
                 <Link
                   href="/sign-in"
                   prefetch={false}
@@ -162,12 +183,17 @@ const Navbar = () => {
                 >
                   Sign Up
                 </Link>
-              </>
+              </div>
             )}
 
             {/* Shopping Cart */}
-            <button onClick={() => setCartOpen(true)}>
-              <ShoppingCart className="w-6 h-6 text-amber-900 hover:text-amber-700 transition duration-300 ease-in-out" />
+            <button onClick={() => setCartOpen(true)} aria-label="Cart">
+              <div className="relative">
+                <ShoppingCart className="w-6 h-6 text-amber-900 hover:text-amber-700 transition duration-300 ease-in-out" />
+                <span className="absolute -top-3 -right-2 flex items-center justify-center w-5 h-5 text-xs font-bold text-white bg-amber-700 rounded-full">
+                  {mounted ? filterIteambyUser.length : 0}
+                </span>
+              </div>
             </button>
           </div>
         </div>
@@ -219,10 +245,21 @@ const Navbar = () => {
             <Menu className="w-7 h-7" />
           </button>
           <Link prefetch={false} href="/" className="flex items-center">
-            <Image src="/logo-removebg-preview.png" width={64} height={64} alt="logo" priority />
+            <Image
+              src="/logo-removebg-preview.png"
+              width={64}
+              height={64}
+              alt="logo"
+              priority
+            />
           </Link>
           <button onClick={() => setCartOpen(true)} aria-label="Cart">
-            <ShoppingCart className="w-6 h-6 text-amber-900 hover:text-amber-700 transition duration-300 ease-in-out" />
+            <div className="relative">
+              <ShoppingCart className="w-6 h-6 text-amber-900 hover:text-amber-700 transition duration-300 ease-in-out" />
+              <span className="absolute -top-3 -right-2 flex items-center justify-center w-5 h-5 text-xs font-bold text-white bg-amber-700 rounded-full">
+                {mounted ? filterIteambyUser.length : 0}
+              </span>
+            </div>
           </button>
         </div>
       </div>
@@ -312,7 +349,7 @@ const Navbar = () => {
                 ))}
 
                 {/* User Section for Mobile */}
-                {user ? (
+                {mounted && user ? (
                   <div className="mt-4 relative">
                     <button
                       onClick={() =>
@@ -385,9 +422,7 @@ const Navbar = () => {
 
       {/* Cart Sidebar */}
       <AnimatePresence>
-        {cartOpen && (
-            <CartPage setCartOpen={setCartOpen}/>
-        )}
+        {cartOpen && <CartPage setCartOpen={setCartOpen} />}
       </AnimatePresence>
     </header>
   );

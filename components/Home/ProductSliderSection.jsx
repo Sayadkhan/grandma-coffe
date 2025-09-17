@@ -13,7 +13,6 @@ import {
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
-import { useProducts } from "@/hooks/useProducts";
 
 import ProductCardSkeleton from "@/skatallon/ProductCardSkeleton";
 import { useCategories } from "@/hooks/useCategory";
@@ -22,51 +21,57 @@ import { useCategories } from "@/hooks/useCategory";
 function ProductCarousel({ selectedCategory, products }) {
   const filteredProducts = useMemo(() => {
     if (selectedCategory === "All") return products;
-    return products.filter((p) => p.category === selectedCategory);
+    return products.filter((p) => p?.category === selectedCategory);
   }, [products, selectedCategory]);
 
   if (!filteredProducts.length) {
-    return <p className="text-center py-12 text-gray-500">No products found.</p>;
+    return (
+      <p className="text-center py-12 text-gray-500">
+        No products found.
+      </p>
+    );
   }
 
   return (
     <Carousel className="w-full">
       <CarouselContent className="-ml-2">
-        {filteredProducts.map((product, index) => (
-          <CarouselItem
-            key={product._id}
-            className="pl-2 md:basis-1/2 lg:basis-1/3"
-          >
-            <motion.div
-              initial={{ opacity: 0, y: 40 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              transition={{ delay: index * 0.1, duration: 0.5 }}
-              viewport={{ once: true, amount: 0.2 }}
+        {filteredProducts
+          .filter((p) => p && p._id) // safety check
+          .map((product, index) => (
+            <CarouselItem
+              key={product._id}
+              className="pl-2 md:basis-1/2 lg:basis-1/3"
             >
-              <Card className="relative overflow-hidden hover:shadow-xl transition-shadow duration-300 rounded-lg">
-                <CardContent className="p-0">
-                  <motion.div
-                    whileHover={{ scale: 1.05 }}
-                    transition={{ duration: 0.3 }}
-                    className="relative"
-                  >
-                    <Image
-                      src={product.images[0] || ""}
-                      alt={product.name}
-                      width={300}
-                      height={300}
-                      loading="lazy"
-                      className="w-full object-cover aspect-square"
-                    />
-                    <div className="absolute bottom-3 left-3 bg-amber-50/90 px-3 py-1 rounded-md shadow text-sm font-semibold text-amber-900 z-10">
-                      {product.name}
-                    </div>
-                  </motion.div>
-                </CardContent>
-              </Card>
-            </motion.div>
-          </CarouselItem>
-        ))}
+              <motion.div
+                initial={{ opacity: 0, y: 40 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{ delay: index * 0.1, duration: 0.5 }}
+                viewport={{ once: true, amount: 0.2 }}
+              >
+                <Card className="relative overflow-hidden hover:shadow-xl transition-shadow duration-300 rounded-lg">
+                  <CardContent className="p-0">
+                    <motion.div
+                      whileHover={{ scale: 1.05 }}
+                      transition={{ duration: 0.3 }}
+                      className="relative"
+                    >
+                      <Image
+                        src={product.images?.[0] || ""}
+                        alt={product.name}
+                        width={300}
+                        height={300}
+                        loading="lazy"
+                        className="w-full object-cover aspect-square"
+                      />
+                      <div className="absolute bottom-3 left-3 bg-amber-50/90 px-3 py-1 rounded-md shadow text-sm font-semibold text-amber-900 z-10">
+                        {product.name}
+                      </div>
+                    </motion.div>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            </CarouselItem>
+          ))}
       </CarouselContent>
 
       {/* Controls */}
@@ -82,35 +87,12 @@ function ProductCarousel({ selectedCategory, products }) {
   );
 }
 
-// ------------------- Product List -------------------
-function ProductList({ selectedCategory }) {
-  const { data, isLoading } = useProducts();
-  const products = data?.products || [];
-
-  return (
-    <div>
-      {isLoading ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {Array.from({ length: 3 }).map((_, i) => (
-            <ProductCardSkeleton key={i} />
-          ))}
-        </div>
-      ) : (
-        <ProductCarousel
-          selectedCategory={selectedCategory}
-          products={products}
-        />
-      )}
-    </div>
-  );
-}
-
-export default function ProductSlider() {
+// ------------------- Main Component -------------------
+export default function ProductSlider({ products = [] }) {
   const [selectedCategory, setSelectedCategory] = useState("All");
 
   // fetch categories
   const { data: categoryData, isLoading: categoriesLoading } = useCategories();
-  console.log(categoryData.categories)
   const categories = ["All", ...(categoryData?.categories?.map((c) => c.name) || [])];
 
   return (
@@ -157,8 +139,11 @@ export default function ProductSlider() {
 
         {/* Right Column */}
         <div>
-          <Suspense fallback={<ProductCardSkeleton count={3} />}>
-            <ProductList selectedCategory={selectedCategory} />
+          <Suspense fallback={<ProductCardSkeleton />}>
+            <ProductCarousel
+              selectedCategory={selectedCategory}
+              products={products}
+            />
           </Suspense>
         </div>
       </div>

@@ -33,6 +33,7 @@ const ProductPageClient = ({ product }) => {
 
     dispatch(
       addToCart({
+        userId: user._id,
         productId: product._id,
         name: product.name,
         price: selectedVariant ? selectedVariant.price : product.price,
