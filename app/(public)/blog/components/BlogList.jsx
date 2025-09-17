@@ -1,3 +1,5 @@
+"use client";
+
 import BlogCard from '@/components/Blog/BlogCard';
 import Link from 'next/link';
 import React from 'react'

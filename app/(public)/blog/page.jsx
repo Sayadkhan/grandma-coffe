@@ -1,11 +1,10 @@
 
 
-import React, { Suspense } from "react";
-import { motion } from "framer-motion";
-import Link from "next/link";
+import { Suspense } from "react";
+
+
 import AboutHero from "@/components/About/AboutHero";
-import BlogCard from "@/components/Blog/BlogCard";
-import { useQuery } from "@tanstack/react-query";
+
 import BlogList from "./components/BlogList";
 
 // fetcher
@@ -37,16 +36,15 @@ async function getCategories() {
 //   );
 // }
 
-const BlogPage = async () => {
+//  ShopPage()
+
+export default async function BlogPage ()  {
 
   const [blogs] = await Promise.all([
     fetchBlogs(),
     // getFeatured(),
    
   ]);
-
-  console.log("Blogs data:", blogs);
-
 
   return (
     <div className="bg-[#f9f7f4] min-h-screen">
@@ -88,4 +86,4 @@ const BlogPage = async () => {
   );
 };
 
-export default BlogPage;
+
