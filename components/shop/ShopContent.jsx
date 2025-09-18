@@ -1,12 +1,36 @@
 "use client";
 
-import React, { useState, Suspense } from "react";
+import React, { useState, Suspense, use } from "react";
 import { Button } from "../ui/button";
 import { SlidersHorizontal } from "lucide-react";
 import SidebarFilters from "./SidebarFilters";
 import ProductCardSkeleton from "@/skatallon/ProductCardSkeleton";
 import { motion } from "framer-motion";
 import ProductItem from "../product/ProductCard";
+
+const ProductCardWrapper = ({ product }) => {
+
+  return (
+    <div className="relative group">
+      {/* Animated on larger screens */}
+      <motion.div
+        key={`animated-${product._id}`}
+        initial={{ opacity: 0, y: 30 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, amount: 0.15 }}
+        transition={{ duration: 0.4 }}
+        className="hidden sm:block"
+      >
+        <ProductItem product={product} />
+      </motion.div>
+
+      {/* Static on mobile */}
+      <div key={`static-${product._id}`} className="block sm:hidden">
+        <ProductItem product={product} />
+      </div>
+    </div>
+  );
+};
 
 const ShopContent = ({ products = [], category = [] }) => {
   const [filterOpen, setFilterOpen] = useState(false);
@@ -56,15 +80,7 @@ const ShopContent = ({ products = [], category = [] }) => {
 
         {/* Products */}
         <main className="flex-1">
-          <Suspense
-            fallback={
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-5 xl:gap-8">
-                {Array.from({ length: 6 }).map((_, idx) => (
-                  <ProductCardSkeleton key={idx} />
-                ))}
-              </div>
-            }
-          >
+          <div>
             {filteredProducts.length === 0 ? (
               <p className="text-center text-gray-500 mt-10">
                 No products found.
@@ -72,30 +88,16 @@ const ShopContent = ({ products = [], category = [] }) => {
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-5 xl:gap-8">
                 {filteredProducts.map((product) => (
-                  <div key={product._id} className="relative group">
-                    {/* Animated on larger screens */}
-                    <motion.div
-                      key={`animated-${product._id}`}
-                      initial={{ opacity: 0, y: 30 }}
-                      whileInView={{ opacity: 1, y: 0 }}
-                      viewport={{ once: true, amount: 0.15 }}
-                      transition={{ duration: 0.4 }}
-                      className="hidden sm:block"
-                    >
-                      <ProductItem product={product} />
-                    </motion.div>
-                    {/* Static on mobile */}
-                    <div
-                      key={`static-${product._id}`}
-                      className="block sm:hidden"
-                    >
-                      <ProductItem product={product} />
-                    </div>
-                  </div>
+                  <Suspense
+                    key={product._id}
+                    fallback={<ProductCardSkeleton />}
+                  >
+                    <ProductCardWrapper product={product} />
+                  </Suspense>
                 ))}
               </div>
             )}
-          </Suspense>
+          </div>
         </main>
       </div>
     </div>

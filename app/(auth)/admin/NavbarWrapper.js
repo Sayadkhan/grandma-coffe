@@ -34,7 +34,10 @@ const menuItems = [
   },
   {
     title: "Orders",
-    href: "/admin/orders",
+    submenu: [
+      // { title: "Add Order", href: "/admin/blog/add" },
+      { title: "All Orders", href: "/admin/order/all" },
+    ],
   },
   {
     title: "Settings",

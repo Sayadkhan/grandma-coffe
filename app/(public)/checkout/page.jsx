@@ -22,6 +22,8 @@ const CheckoutPage = () => {
   
   const filterIteambyUser = items.filter(item => item.userId === user?._id);
 
+  console.log("Filtered Items:", filterIteambyUser);
+
   const [deliveryType, setDeliveryType] = useState("delivery");
   const [paymentMethod, setPaymentMethod] = useState("cod");
   const [loading, setLoading] = useState(false);

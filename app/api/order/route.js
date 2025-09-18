@@ -1,6 +1,7 @@
 // app/api/orders/route.js
 import { NextResponse } from "next/server";
 import Order from "@/models/Order";
+import Customer from "@/models/Customer";
 import { connectDB } from "@/lib/mongodb";
 import Stripe from "stripe";
 
@@ -11,14 +12,36 @@ export async function POST(req) {
   try {
     await connectDB();
     const body = await req.json();
+
     const { paymentMethod, filterIteambyUser, totalPrice } = body;
 
-    // const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
-    const baseUrl = "http://localhost:3000";
+    const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
+    // const baseUrl = "http://localhost:3000";
 
     // 1. If COD → just create order in DB
     if (paymentMethod === "cod") {
-      const order = await Order.create(body);
+      const items = filterIteambyUser.map((item) => ({
+        productId: item?.productId,
+        name: item?.name,
+        image: item?.image,
+        price: item?.price,
+        quantity: item?.quantity,
+        variant: item?.variant?.packetSize,
+      }));
+
+      const orderData = {
+        user: body.user,
+        items,
+        totalPrice,
+        totalQuantity: items?.reduce((sum, i) => sum + i.quantity, 0),
+        paymentMethod,
+        deliveryType: body.deliveryType || "delivery",
+        address: body.address,
+        discount: body.discount || "",
+      };
+
+      const order = await Order.create(orderData);
+
       return NextResponse.json({ success: true, order }, { status: 201 });
     }
 
@@ -66,13 +89,17 @@ export async function POST(req) {
   }
 }
 
-// 📌 Get All Orders (GET)
 export async function GET() {
   try {
     await connectDB();
-    const orders = await Order.find().populate("user", "name email");
+
+    const orders = await Order.find()
+      .populate("user", "name email profileImage mobile")
+      .sort({ createdAt: -1 });
+
     return NextResponse.json({ success: true, orders }, { status: 200 });
   } catch (error) {
+    console.error("Fetch Orders Error:", error.message);
     return NextResponse.json(
       { success: false, message: error.message },
       { status: 500 }

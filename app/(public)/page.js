@@ -9,24 +9,19 @@ import { Suspense } from "react";
 
 // ✅ Example server fetchers
 async function getProducts() {
+  "use server";
   const baseURL = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
   const res = await fetch(`${baseURL}/api/products`, { cache: "no-store" });
   if (!res.ok) return [];
   return res.json();
 }
 async function getCategories() {
+  "use server";
   const baseURL = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
   const res = await fetch(`${baseURL}/api/categories`, { cache: "no-store" });
   if (!res.ok) return [];
   return res.json();
 }
-
-// async function getFeatured() {
-//   const baseURL = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
-//   const res = await fetch(`${baseURL}/api/featured`, { cache: "no-store" });
-//   if (!res.ok) return [];
-//   return res.json();
-// }
 
 // ✅ Dynamic Metadata
 export async function generateMetadata() {
@@ -61,6 +56,8 @@ export async function generateMetadata() {
   };
 }
 
+export const dynamic = "force-dynamic";
+
 // ✅ Home Page (Server Component)
 export default async function HomePage() {
   const [products, category] = await Promise.all([
@@ -68,9 +65,6 @@ export default async function HomePage() {
     // getFeatured(),
     getCategories(),
   ]);
-
-  console.log("Products on HomePage:", products);
-  console.log("Products on HomePage:", category);
 
   const slides = [
     {
@@ -98,9 +92,6 @@ export default async function HomePage() {
       src: "https://images.pexels.com/photos/302899/pexels-photo-302899.jpeg",
     },
   ];
-
-  //     <BlogList blogs={blogs} />
-  //
 
   return (
     <div>

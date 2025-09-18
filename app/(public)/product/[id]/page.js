@@ -18,7 +18,11 @@ export default async function ProductPage({ params }) {
 
     const product = await res.json();
 
-    return <ProductPageClient product={product} />;
+    return (
+      <div className="min-h-screen bg-white">
+        <ProductPageClient product={product} />
+      </div>
+    );
   } catch (error) {
     console.error("Error fetching product:", error);
     return (

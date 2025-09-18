@@ -1,8 +1,28 @@
 import mongoose from "mongoose";
 
+// items: [
+//   {
+//     productId: { type: mongoose.Schema.Types.ObjectId, ref: "Product" },
+//     name: String,
+//     image: String,
+//     price: Number,
+//     quantity: Number,
+//     variant: {
+//       packetSize: String,
+//       price: Number,
+//       stock: Number,
+//       _id: mongoose.Schema.Types.ObjectId, // keep reference if needed
+//     },
+//   },
+// ],
+
 const OrderSchema = new mongoose.Schema(
   {
-    user: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
+    user: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Customer",
+      required: true,
+    }, // ✅ FIXED
     items: [
       {
         productId: { type: mongoose.Schema.Types.ObjectId, ref: "Product" },
@@ -10,6 +30,7 @@ const OrderSchema = new mongoose.Schema(
         image: String,
         price: Number,
         quantity: Number,
+        variant: String,
       },
     ],
     totalQuantity: Number,
@@ -28,10 +49,8 @@ const OrderSchema = new mongoose.Schema(
       postalCode: String,
       country: String,
     },
-    paymentMethod: {
-      type: String,
-    },
-    status: {
+    paymentMethod: String,
+    PaymentStatus: {
       type: String,
       enum: [
         "pending",
@@ -41,6 +60,12 @@ const OrderSchema = new mongoose.Schema(
         "delivered",
         "cancelled",
       ],
+      default: "pending",
+    },
+
+    deliveryStatus: {
+      type: String,
+      enum: ["pending", "shipped", "delivered", "cancelled"],
       default: "pending",
     },
   },
