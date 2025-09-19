@@ -14,9 +14,20 @@ export async function POST(req) {
     const body = await req.json();
 
     const { paymentMethod, filterIteambyUser, totalPrice } = body;
-
     const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
-    // const baseUrl = "http://localhost:3000";
+
+    // 🔹 Generate a new orderId here
+    const lastOrder = await Order.findOne().sort({ createdAt: -1 });
+    let nextNumber = 1;
+
+    if (lastOrder?.orderId) {
+      const lastNumber = parseInt(lastOrder.orderId.replace("ORD-", ""), 10);
+      if (!isNaN(lastNumber)) {
+        nextNumber = lastNumber + 1;
+      }
+    }
+
+    const orderId = `ORD-${nextNumber.toString().padStart(5, "0")}`;
 
     // 1. If COD → just create order in DB
     if (paymentMethod === "cod") {
@@ -30,6 +41,7 @@ export async function POST(req) {
       }));
 
       const orderData = {
+        orderId, // ✅ Inject generated ID here
         user: body.user,
         items,
         totalPrice,
@@ -70,7 +82,12 @@ export async function POST(req) {
         cancel_url: `${baseUrl}/checkout`,
       });
 
-      const order = await Order.create(body);
+      const orderData = {
+        orderId, // ✅ Add ID here too
+        ...body,
+      };
+
+      const order = await Order.create(orderData);
 
       return NextResponse.json({ success: true, order, id: session.id });
     }

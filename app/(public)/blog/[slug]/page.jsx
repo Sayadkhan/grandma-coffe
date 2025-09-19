@@ -17,7 +17,7 @@ const getBlogData = cache(async (slug) => {
 
 // ✅ Dynamic Metadata
 export async function generateMetadata({ params }) {
-  const { slug } = params; 
+  const { slug } = await params; 
   const blog = await getBlogData(slug);
 
   if (!blog)
@@ -51,10 +51,11 @@ export async function generateMetadata({ params }) {
 
 // ✅ Page
 export default async function BlogPage({ params }) {
-  const blog = await getBlogData(params.slug);
+  const {slug} = await params
+  const blog = await getBlogData(slug);
 
   if (!blog) {
-    notFound(); // standard Next.js 404
+    notFound(); 
   }
 
   return <BlogDetailsModern blog={blog} />;

@@ -4,8 +4,10 @@ import Link from "next/link";
 import { ShoppingCart, Menu, X, ChevronDown } from "lucide-react";
 import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import CartPage from "../cart/CartPage";
+import { logout } from "@/redux/slice/customerSlice";
+
 
 const Navbar = () => {
   const [hoveredLink, setHoveredLink] = useState(null);
@@ -14,6 +16,13 @@ const Navbar = () => {
   const [cartOpen, setCartOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
 
+  const dispatch = useDispatch()
+
+
+   const handleLogout = () => {
+      dispatch(logout());
+      route.push("/");
+    };
   // Redux state
   const { items } = useSelector((state) => state.cart);
   const user = useSelector((state) => state.customer.customer);
@@ -154,10 +163,7 @@ const Navbar = () => {
                         Profile
                       </Link>
                       <button
-                        onClick={() => {
-                          // TODO: Add logout logic
-                          setOpenSubmenu(null);
-                        }}
+                        onClick={handleLogout}
                         className="px-4 py-2 text-amber-900 hover:bg-amber-50 text-left w-full"
                       >
                         Logout

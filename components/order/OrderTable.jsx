@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import {
   Table,
   TableBody,
@@ -15,18 +15,19 @@ import { ChevronLeft, ChevronRight, Delete, Edit2, Eye } from "lucide-react";
 import OrderModal from "./OrderModal";
 import ViewModal from "./ViewModal";
 
-
-
 const OrderTable = ({ orders: initialOrders = [], pageSize = 5 }) => {
   const [orders, setOrders] = useState(initialOrders);
   const [page, setPage] = useState(1);
   const [editingOrder, setEditingOrder] = useState(null);
   const [viewingOrder, setViewingOrder] = useState(null);
 
-  const totalPages = Math.ceil(orders.length / pageSize);
-  const paginatedOrders = orders.slice((page - 1) * pageSize, page * pageSize);
+  // ✅ Filters
+  const [filterDelivery, setFilterDelivery] = useState("");
+  const [filterPayment, setFilterPayment] = useState("");
+  const [filterOrderId, setFilterOrderId] = useState("");
+  const [filterCustomer, setFilterCustomer] = useState("");
 
-  // ✅ SINGLE PATCH METHOD FOR ANY UPDATE
+  // ✅ PATCH method
   const patchOrder = async (orderId, updates) => {
     try {
       const res = await fetch(`/api/order/${orderId}`, {
@@ -36,7 +37,6 @@ const OrderTable = ({ orders: initialOrders = [], pageSize = 5 }) => {
       });
 
       if (!res.ok) throw new Error("Failed to update order");
-
       const updatedOrder = await res.json();
 
       setOrders((prev) =>
@@ -48,25 +48,50 @@ const OrderTable = ({ orders: initialOrders = [], pageSize = 5 }) => {
     }
   };
 
-
   const handleDelete = async (id) => {
-  if (!confirm("Are you sure you want to delete this order?")) return;
+    if (!confirm("Are you sure you want to delete this order?")) return;
 
-  try {
-    const res = await fetch(`/api/orders/${id}`, {
-      method: "DELETE",
-    });
+    try {
+      const res = await fetch(`/api/orders/${id}`, {
+        method: "DELETE",
+      });
 
-    if (!res.ok) throw new Error("Failed to delete order");
+      if (!res.ok) throw new Error("Failed to delete order");
 
-    // Remove order from local state
-    setOrders((prev) => prev.filter((order) => order._id !== id));
-  } catch (error) {
-    console.error("Delete error:", error);
-    alert("Failed to delete order");
-  }
-};
+      setOrders((prev) => prev.filter((order) => order._id !== id));
+    } catch (error) {
+      console.error("Delete error:", error);
+      alert("Failed to delete order");
+    }
+  };
 
+  // ✅ Filtered orders
+const filteredOrders = useMemo(() => {
+  return orders.filter((order) => {
+    const matchesDelivery =
+      !filterDelivery || order.deliveryStatus === filterDelivery;
+
+    const matchesPayment =
+      !filterPayment || order.PaymentStatus === filterPayment;
+
+    const matchesOrderId =
+      !filterOrderId ||
+      (order.orderId && order.orderId.toLowerCase().includes(filterOrderId.toLowerCase()));
+
+    const matchesCustomer =
+      !filterCustomer ||
+      (order.user?.name && order.user.name.toLowerCase().includes(filterCustomer.toLowerCase()));
+
+    return matchesDelivery && matchesPayment && matchesOrderId && matchesCustomer;
+  });
+}, [orders, filterDelivery, filterPayment, filterOrderId, filterCustomer]);
+
+
+  const totalPages = Math.ceil(filteredOrders.length / pageSize);
+  const paginatedOrders = filteredOrders.slice(
+    (page - 1) * pageSize,
+    page * pageSize
+  );
 
   const handlePrev = () => page > 1 && setPage(page - 1);
   const handleNext = () => page < totalPages && setPage(page + 1);
@@ -76,19 +101,61 @@ const OrderTable = ({ orders: initialOrders = [], pageSize = 5 }) => {
       <CardContent>
         <h2 className="text-2xl font-bold mb-4">Orders</h2>
 
+        {/* ✅ Filter Section */}
+        <div className="flex flex-wrap gap-4 mb-4">
+          <input
+            type="text"
+            placeholder="Search Order ID"
+            value={filterOrderId}
+            onChange={(e) => setFilterOrderId(e.target.value)}
+            className="border p-2 rounded-md"
+          />
+          <input
+            type="text"
+            placeholder="Search Customer"
+            value={filterCustomer}
+            onChange={(e) => setFilterCustomer(e.target.value)}
+            className="border p-2 rounded-md"
+          />
+          <select
+            value={filterDelivery}
+            onChange={(e) => setFilterDelivery(e.target.value)}
+            className="border p-2 rounded-md"
+          >
+            <option value="">All Delivery Status</option>
+            <option value="pending">Pending</option>
+            <option value="shipped">Shipped</option>
+            <option value="delivered">Delivered</option>
+            <option value="cancelled">Cancelled</option>
+          </select>
+          <select
+            value={filterPayment}
+            onChange={(e) => setFilterPayment(e.target.value)}
+            className="border p-2 rounded-md"
+          >
+            <option value="">All Payment Status</option>
+            <option value="pending">Pending</option>
+            <option value="pending_payment">Pending Payment</option>
+            <option value="paid">Paid</option>
+            <option value="shipped">Shipped</option>
+            <option value="delivered">Delivered</option>
+            <option value="cancelled">Cancelled</option>
+          </select>
+        </div>
+
         <div className="overflow-x-auto">
           <Table>
             <TableHeader>
               <TableRow className="bg-gray-100">
-                <TableHead className="font-semibold">Serial</TableHead>
-                <TableHead className="font-semibold">Order ID</TableHead>
-                <TableHead className="font-semibold">Customer</TableHead>
-                <TableHead className="font-semibold">Email</TableHead>
-                <TableHead className="font-semibold">Total</TableHead>
-                <TableHead className="font-semibold">Payment Method</TableHead>
-                <TableHead className="font-semibold">Delivery Status</TableHead>
-                <TableHead className="font-semibold">Payment Status</TableHead>
-                <TableHead className="font-semibold text-right">Action</TableHead>
+                <TableHead>Serial</TableHead>
+                <TableHead>Order ID</TableHead>
+                <TableHead>Customer</TableHead>
+                <TableHead>Email</TableHead>
+                <TableHead>Total</TableHead>
+                <TableHead>Payment Method</TableHead>
+                <TableHead>Delivery Status</TableHead>
+                <TableHead>Payment Status</TableHead>
+                <TableHead className="text-right">Action</TableHead>
               </TableRow>
             </TableHeader>
 
@@ -96,14 +163,12 @@ const OrderTable = ({ orders: initialOrders = [], pageSize = 5 }) => {
               {paginatedOrders.length > 0 ? (
                 paginatedOrders.map((order, index) => (
                   <TableRow key={order._id} className="hover:bg-gray-50">
-                    <TableCell>{index + 1}</TableCell>
-                    <TableCell>{order._id.slice(-6).toUpperCase()}</TableCell>
+                    <TableCell>{index + 1 + (page - 1) * pageSize}</TableCell>
+                    <TableCell>{order.orderId}</TableCell>
                     <TableCell>{order.user?.name || "Guest"}</TableCell>
                     <TableCell>{order.user?.email || "N/A"}</TableCell>
                     <TableCell>${order.totalPrice?.toFixed(2)}</TableCell>
                     <TableCell>{order.paymentMethod}</TableCell>
-
-                    {/* ✅ Delivery Status Dropdown */}
                     <TableCell>
                       <select
                         value={order.deliveryStatus}
@@ -120,8 +185,6 @@ const OrderTable = ({ orders: initialOrders = [], pageSize = 5 }) => {
                         <option value="cancelled">Cancelled</option>
                       </select>
                     </TableCell>
-
-                    {/* ✅ Payment Status Dropdown */}
                     <TableCell>
                       <select
                         value={order.PaymentStatus}
@@ -140,7 +203,6 @@ const OrderTable = ({ orders: initialOrders = [], pageSize = 5 }) => {
                         <option value="cancelled">Cancelled</option>
                       </select>
                     </TableCell>
-
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-2">
                         <Button
@@ -150,9 +212,6 @@ const OrderTable = ({ orders: initialOrders = [], pageSize = 5 }) => {
                         >
                           <Eye className="w-4 h-4" />
                         </Button>
-
-
-                        {/* ✅ Edit Button Opens Modal */}
                         <Button
                           variant="outline"
                           size="sm"
@@ -160,14 +219,13 @@ const OrderTable = ({ orders: initialOrders = [], pageSize = 5 }) => {
                         >
                           <Edit2 className="w-4 h-4" />
                         </Button>
-
-                         <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleDelete(order._id)}
-                          >
-                            <Delete className="w-4 h-4" />
-                          </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleDelete(order._id)}
+                        >
+                          <Delete className="w-4 h-4" />
+                        </Button>
                       </div>
                     </TableCell>
                   </TableRow>
@@ -214,7 +272,7 @@ const OrderTable = ({ orders: initialOrders = [], pageSize = 5 }) => {
         )}
       </CardContent>
 
-      {/* ✅ Edit Modal */}
+      {/* Edit Modal */}
       {editingOrder && (
         <OrderModal
           order={editingOrder}
@@ -224,11 +282,8 @@ const OrderTable = ({ orders: initialOrders = [], pageSize = 5 }) => {
       )}
 
       {viewingOrder && (
-      <ViewModal
-        order={viewingOrder}
-        onClose={() => setViewingOrder(null)}
-      />
-    )}  
+        <ViewModal order={viewingOrder} onClose={() => setViewingOrder(null)} />
+      )}
     </Card>
   );
 };

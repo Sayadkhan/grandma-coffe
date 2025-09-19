@@ -1,28 +1,19 @@
 import mongoose from "mongoose";
 
-// items: [
-//   {
-//     productId: { type: mongoose.Schema.Types.ObjectId, ref: "Product" },
-//     name: String,
-//     image: String,
-//     price: Number,
-//     quantity: Number,
-//     variant: {
-//       packetSize: String,
-//       price: Number,
-//       stock: Number,
-//       _id: mongoose.Schema.Types.ObjectId, // keep reference if needed
-//     },
-//   },
-// ],
-
 const OrderSchema = new mongoose.Schema(
   {
+    orderId: {
+      type: String,
+      unique: true,
+      required: true,
+    },
+
     user: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Customer",
       required: true,
-    }, // ✅ FIXED
+    },
+
     items: [
       {
         productId: { type: mongoose.Schema.Types.ObjectId, ref: "Product" },
@@ -33,14 +24,17 @@ const OrderSchema = new mongoose.Schema(
         variant: String,
       },
     ],
+
     totalQuantity: Number,
     totalPrice: Number,
     discount: { type: String, default: "" },
+
     deliveryType: {
       type: String,
       enum: ["delivery", "pickup"],
       default: "delivery",
     },
+
     address: {
       label: String,
       street: String,
@@ -49,7 +43,9 @@ const OrderSchema = new mongoose.Schema(
       postalCode: String,
       country: String,
     },
+
     paymentMethod: String,
+
     PaymentStatus: {
       type: String,
       enum: [

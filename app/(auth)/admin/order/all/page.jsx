@@ -19,7 +19,7 @@ async function getOrder() {
 
   const orders = await getOrder();
 
-  console.log("Orders in Page:", orders);
+
 
 
   return (

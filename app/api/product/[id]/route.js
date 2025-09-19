@@ -48,7 +48,7 @@ export async function PATCH(req, { params }) {
         "discountType",
         "category",
         "tags",
-        "variants", // ✅ handle variants in JSON
+        "variants",
       ];
       fields.forEach((f) => {
         if (body[f] !== undefined) updateData[f] = body[f];

@@ -4,7 +4,7 @@ import { fetchCategories } from "@/utils/api";
 import CategoriesPage from "../components/CategoriesPage";
 
 export default async function Page({ searchParams }) {
-  const params = await searchParams; // ✅ fix
+  const params = await searchParams; 
   const page = Number(params?.page) || 1;
   const limit = 10;
 
