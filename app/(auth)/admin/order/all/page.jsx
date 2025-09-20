@@ -3,8 +3,8 @@ import OrderTable from "@/components/order/OrderTable";
 
 async function getOrder() {
   "use server";
-  // const baseURL = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
-  const baseURL = "http://localhost:3000";
+  const baseURL = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
+
 
   const res = await fetch(`${baseURL}/api/order`, { cache: "no-store" });
 

@@ -10,6 +10,7 @@ const ProductItem = ({ product }) => {
       className="flex flex-col bg-[#FAF6F0] rounded-2xl shadow-md overflow-hidden 
                  transition-all duration-500 hover:shadow-xl hover:-translate-y-2"
     >
+  <Link     href={`/product/${product._id}`}>
       {/* Product Image */}
       <div className="overflow-hidden relative">
         <Image
@@ -27,6 +28,7 @@ const ProductItem = ({ product }) => {
                      hover:opacity-100 transition-opacity duration-500"
         ></div>
       </div>
+      </Link>
 
       {/* Product Content */}
       <div className="flex flex-col gap-2 p-4">

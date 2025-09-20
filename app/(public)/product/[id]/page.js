@@ -1,34 +1,33 @@
 import ProductPageClient from "@/components/product/ProductPageClient";
+import { cache } from "react";
 
-export default async function ProductPage({ params }) {
-  const resolvedParams = await params;
+// Cached fetch for product
+const getProductData = cache(async (id) => {
+  const baseURL = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
 
-  try {
-    const baseUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
+  const res = await fetch(`${baseURL}/api/product/${id}`, {
+    cache: "no-store",
+  });
 
-    const res = await fetch(`${baseUrl}/api/product/${resolvedParams.id}`, {
-      cache: "no-store",
-    });
+  if (!res.ok) return null;
+  return res.json();
+});
 
-    if (!res.ok) {
-      return (
-        <p className="text-center text-red-600 py-10">❌ Product not found</p>
-      );
-    }
+const Page = async ({ params }) => {
+  const { id } = await params;
+  const data = await getProductData(id);
 
-    const product = await res.json();
-
+  if (!data) {
     return (
-      <div className="min-h-screen bg-white">
-        <ProductPageClient product={product} />
-      </div>
-    );
-  } catch (error) {
-    console.error("Error fetching product:", error);
-    return (
-      <p className="text-center text-red-600 py-10">
-        ❌ Failed to load product
-      </p>
+      <p className="text-center text-red-600 py-10">❌ Product not found</p>
     );
   }
-}
+
+  return (
+    <div className="min-h-screen bg-white">
+      <ProductPageClient product={data} />
+    </div>
+  );
+};
+
+export default Page;

@@ -15,6 +15,7 @@ import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
 
 import ProductCardSkeleton from "@/skatallon/ProductCardSkeleton";
+import Link from "next/link";
 
 
 // ------------------- Product Carousel -------------------
@@ -48,6 +49,7 @@ function ProductCarousel({ selectedCategory, products }) {
                 transition={{ delay: index * 0.1, duration: 0.5 }}
                 viewport={{ once: true, amount: 0.2 }}
               >
+               <Link href={`/product/${product._id}`}>
                 <Card className="relative overflow-hidden hover:shadow-xl transition-shadow duration-300 rounded-lg">
                   <CardContent className="p-0">
                     <motion.div
@@ -68,7 +70,7 @@ function ProductCarousel({ selectedCategory, products }) {
                       </div>
                     </motion.div>
                   </CardContent>
-                </Card>
+                </Card></Link>
               </motion.div>
             </CarouselItem>
           ))}

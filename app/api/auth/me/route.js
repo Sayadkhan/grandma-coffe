@@ -2,7 +2,7 @@
 import { NextResponse } from "next/server";
 import { verifyAccessToken } from "@/lib/auth";
 import { connectDB } from "@/lib/mongodb";
-import User from "@/models/user";
+import User from "@/models/user/User";
 
 export async function GET(req) {
   try {
